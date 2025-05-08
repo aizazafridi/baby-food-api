@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 router.post('/register', async (req, res) => {
   const { username, password, role } = req.body;
   const hashed = await bcrypt.hash(password, 10);
-  db.query('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', 
+  pool.query('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', 
     [username, hashed, role || 'user'], 
     (err) => {
       if (err) return res.status(500).send(err);
@@ -19,12 +19,12 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', (req, res) => {
   const { username, password } = req.body;
-  db.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
+  pool.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
     if (err || results.length === 0) return res.status(400).send('Invalid credentials');
     const valid = await bcrypt.compare(password, results[0].password);
     if (!valid) return res.status(400).send('Invalid credentials');
     
-    const token = jwt.sign({ id: results[0].id, role: results[0].role }, 'secretkey');
+    const token = jwt.sign({ id: results[0].id, role: results[0].role }, 'secretkey', { expiresIn: '1h' });
     res.json({ token });
   });
 });
@@ -44,7 +44,7 @@ function authorizeRoles(...allowedRoles) {
   };
 }
 
-// Protected route
+// Protected route: for testing
 router.get('/admin-data', authorizeRoles('admin'), (req, res) => {
   res.send('This is admin-only data');
 });
