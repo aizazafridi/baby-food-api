@@ -57,4 +57,33 @@ router.get('/foods', authenticateToken, (req, res) => {
   });
 });
 
+// GET /foods - returns both foods and tips
+router.get('/main-screen-data', authenticateToken, (req, res) => {
+  const foodsQuery = 'SELECT * FROM foods';
+  const tipsQuery = 'SELECT * FROM tips ORDER BY RAND() LIMIT 1';
+
+  pool.query(foodsQuery, (err, foodsResults) => {
+    if (err) {
+      console.error('Error fetching foods:', err);
+      return res.status(500).send('Server error');
+    }
+
+    pool.query(tipsQuery, (err, tipsResults) => {
+      if (err) {
+        console.error('Error fetching tips:', err);
+        return res.status(500).send('Server error');
+      }
+
+      res.json({
+        foods: foodsResults,
+        tips: tipsResults
+      });
+    });
+  });
+});
+
+
+
+
+
 module.exports = router;
